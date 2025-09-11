@@ -43,23 +43,23 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun TestScreenButtons(modifier: Modifier = Modifier, activity: MainActivity) {
-  Row(
+  Column(
     modifier = modifier
-      .fillMaxWidth()
+      .fillMaxSize()
       .padding(16.dp),
-    horizontalArrangement = Arrangement.spacedBy(16.dp)
+    verticalArrangement = Arrangement.spacedBy(16.dp)
   ) {
-    Button(
-      onClick = { activity.triggerScreenReceiver(Intent.ACTION_SCREEN_OFF) },
-      modifier = Modifier.weight(1f)
-    ) {
+    Button(onClick = {
+      // Simulate screen lock
+      activity.triggerScreenReceiver(Intent.ACTION_SCREEN_OFF)
+    }) {
       Text(text = "Screen Lock")
     }
 
-    Button(
-      onClick = { activity.triggerScreenReceiver(Intent.ACTION_SCREEN_ON) },
-      modifier = Modifier.weight(1f)
-    ) {
+    Button(onClick = {
+      // Simulate screen unlock
+      activity.triggerScreenReceiver(Intent.ACTION_SCREEN_ON)
+    }) {
       Text(text = "Screen Unlock")
     }
   }

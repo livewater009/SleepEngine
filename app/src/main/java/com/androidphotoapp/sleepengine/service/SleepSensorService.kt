@@ -103,6 +103,10 @@ class SleepSensorService : Service(), SensorEventListener {
 
   override fun onSensorChanged(event: SensorEvent?) {
     event?.let {
+      Log.d("SensorDebug", "Sensor type: ${it.sensor.type}, values: ${it.values.joinToString()}")
+    }
+    
+    event?.let {
       when (it.sensor.type) {
         Sensor.TYPE_ACCELEROMETER -> {
           val x = it.values[0]

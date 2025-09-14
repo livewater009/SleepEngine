@@ -2,6 +2,7 @@ package com.androidphotoapp.sleepengine
 
 import android.Manifest
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -21,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.androidphotoapp.sleepengine.receiver.ScreenReceiver
+import com.androidphotoapp.sleepengine.service.SleepSensorService
 import com.androidphotoapp.sleepengine.storage.SleepLogStore
 import com.androidphotoapp.sleepengine.storage.SleepLog
 import com.androidphotoapp.sleepengine.ui.theme.SleepEngineTheme
@@ -42,8 +44,20 @@ class MainActivity : ComponentActivity() {
       }
     }
 
-    // Check and request runtime permissions
+    // Check permissions
     checkPermissions()
+
+    // Dynamically register screen on/off receiver
+    val filter = IntentFilter().apply {
+      addAction(Intent.ACTION_SCREEN_ON)
+      addAction(Intent.ACTION_SCREEN_OFF)
+    }
+    registerReceiver(screenReceiver, filter)
+  }
+
+  override fun onDestroy() {
+    super.onDestroy()
+    unregisterReceiver(screenReceiver)
   }
 
   /** Runtime permission check */
@@ -72,7 +86,7 @@ class MainActivity : ComponentActivity() {
       }
     }
 
-  /** Simulate screen lock/unlock triggers */
+  /** Simulate screen lock/unlock triggers for testing */
   @RequiresApi(Build.VERSION_CODES.O)
   fun triggerScreenReceiver(action: String) {
     val intent = Intent(action)
@@ -86,11 +100,11 @@ class MainActivity : ComponentActivity() {
 fun MainScreen(activity: MainActivity) {
   var sleepLogs by remember { mutableStateOf(SleepLogStore.getLogs(activity).toList()) }
 
-  // Observe changes every second (or you can implement a better Flow/LiveData in future)
+  // Refresh logs every second
   LaunchedEffect(Unit) {
     while (true) {
       sleepLogs = SleepLogStore.getLogs(activity).toList()
-      kotlinx.coroutines.delay(1000) // refresh every 1 second
+      kotlinx.coroutines.delay(1000)
     }
   }
 
@@ -130,6 +144,20 @@ fun TestScreenButtons(activity: MainActivity) {
       modifier = Modifier.weight(1f)
     ) {
       Text(text = "Screen Unlock")
+    }
+
+    Button(
+      onClick = {
+        // Start foreground service explicitly
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+          val serviceIntent = Intent(activity, SleepSensorService::class.java)
+          ContextCompat.startForegroundService(activity, serviceIntent)
+          Toast.makeText(activity, "Foreground Service Started", Toast.LENGTH_SHORT).show()
+        }
+      },
+      modifier = Modifier.weight(1f)
+    ) {
+      Text(text = "Start Service")
     }
   }
 }

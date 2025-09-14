@@ -1,11 +1,13 @@
 package com.androidphotoapp.sleepengine.service
 
+import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -15,8 +17,10 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.androidphotoapp.sleepengine.R
 import com.androidphotoapp.sleepengine.storage.SensorDataStore
+import java.io.File
 import java.io.IOException
 
 class SleepSensorService : Service(), SensorEventListener {
@@ -26,98 +30,136 @@ class SleepSensorService : Service(), SensorEventListener {
   private var lightSensor: Sensor? = null
 
   private var mediaRecorder: MediaRecorder? = null
+  private var audioThread: Thread? = null
+  private var tempAudioFile: File? = null
 
   private val CHANNEL_ID = "sleep_sensor_channel"
+  private val TAG = "SleepSensorService"
 
   override fun onCreate() {
     super.onCreate()
+    Log.d(TAG, "onCreate")
+
+    // Start service as foreground
+    startForeground(1, createNotification())
 
     // Initialize sensors
     sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
     accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
     lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
-
-    startForeground(1, createNotification())
-    startTracking()
-    startAudioTracking()
   }
 
   override fun onDestroy() {
     super.onDestroy()
     stopTracking()
     stopAudioTracking()
-    Log.d("SleepSensorService", "Service destroyed")
+    Log.d(TAG, "Service destroyed")
   }
 
   /** Start motion & light sensor tracking */
   private fun startTracking() {
     accelerometer?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
     lightSensor?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
-    Log.d("SleepSensorService", "Sensors registered. Accelerometer: $accelerometer, Light: $lightSensor")
+    Log.d(TAG, "Sensors registered. Accelerometer: $accelerometer, Light: $lightSensor")
+
+    startAudioTrackingSafely()
   }
 
   private fun stopTracking() {
     sensorManager.unregisterListener(this)
-    Log.d("SleepSensorService", "Stopped tracking sensors")
+    Log.d(TAG, "Stopped tracking sensors")
   }
 
-  /** Start audio recording to measure ambient noise */
-  private fun startAudioTracking() {
-    mediaRecorder = MediaRecorder().apply {
-      setAudioSource(MediaRecorder.AudioSource.MIC)
-      setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-      setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
-      setOutputFile("/dev/null") // Discard audio, we just want amplitude
-      try {
-        prepare()
-        start()
-        Log.d("SleepSensorService", "Started audio tracking")
-      } catch (e: IOException) {
-        Log.e("SleepSensorService", "Audio tracking failed: ${e.message}")
-      }
+  /** Start audio recording safely */
+  private fun startAudioTrackingSafely() {
+    // Check audio permission
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+      ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+      != PackageManager.PERMISSION_GRANTED
+    ) {
+      Log.e(TAG, "Audio permission not granted, skipping recording")
+      return
     }
 
-    // Optional: poll amplitude periodically
-    Thread {
-      while (mediaRecorder != null) {
-        try {
-          val amplitude = mediaRecorder?.maxAmplitude ?: 0
-          Log.d("SleepSensorService", "Audio amplitude: $amplitude")
-          SensorDataStore.saveAudioAmplitude(applicationContext, amplitude.toFloat())
-          Thread.sleep(1000) // 1-second interval
-        } catch (e: InterruptedException) {
-          break
+    try {
+      tempAudioFile = File.createTempFile("sleep_audio", ".3gp", cacheDir)
+
+      mediaRecorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        MediaRecorder(applicationContext)
+      } else {
+        MediaRecorder()
+      }
+
+      mediaRecorder?.apply {
+        setAudioSource(MediaRecorder.AudioSource.MIC)
+        setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
+        setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+        setOutputFile(tempAudioFile!!.absolutePath)
+
+        prepare()
+        start()
+        Log.d(TAG, "Audio tracking started")
+      }
+
+      // Background thread to poll amplitude
+      audioThread = Thread {
+        while (mediaRecorder != null) {
+          try {
+            val amplitude = mediaRecorder?.maxAmplitude ?: 0
+            Log.d(TAG, "Audio amplitude: $amplitude")
+            SensorDataStore.saveAudioAmplitude(applicationContext, amplitude.toFloat())
+            Thread.sleep(1000)
+          } catch (e: InterruptedException) {
+            break
+          } catch (e: Exception) {
+            Log.e(TAG, "Error reading audio amplitude: ${e.message}")
+            break
+          }
         }
       }
-    }.start()
+      audioThread?.start()
+
+    } catch (e: IOException) {
+      Log.e(TAG, "MediaRecorder prepare/start failed: ${e.message}")
+    } catch (e: RuntimeException) {
+      Log.e(TAG, "MediaRecorder start failed: ${e.message}")
+    }
   }
 
   private fun stopAudioTracking() {
-    mediaRecorder?.apply {
-      stop()
-      release()
+    try {
+      audioThread?.interrupt()
+      audioThread = null
+
+      mediaRecorder?.apply {
+        stop()
+        release()
+      }
+      mediaRecorder = null
+
+      tempAudioFile?.delete()
+      tempAudioFile = null
+
+    } catch (e: Exception) {
+      Log.e(TAG, "Error stopping audio: ${e.message}")
     }
-    mediaRecorder = null
-    Log.d("SleepSensorService", "Stopped audio tracking")
+
+    Log.d(TAG, "Stopped audio tracking")
   }
 
   override fun onSensorChanged(event: SensorEvent?) {
-    event?.let {
-      Log.d("SensorDebug", "Sensor type: ${it.sensor.type}, values: ${it.values.joinToString()}")
-    }
-
     event?.let {
       when (it.sensor.type) {
         Sensor.TYPE_ACCELEROMETER -> {
           val x = it.values[0]
           val y = it.values[1]
           val z = it.values[2]
-          Log.d("SleepSensorService", "Accelerometer: x=$x, y=$y, z=$z")
+          Log.d(TAG, "Accelerometer: x=$x, y=$y, z=$z")
           SensorDataStore.saveMotionData(applicationContext, x, y, z)
         }
         Sensor.TYPE_LIGHT -> {
           val light = it.values[0]
-          Log.d("SleepSensorService", "Light: $light")
+          Log.d(TAG, "Light: $light")
           SensorDataStore.saveLightData(applicationContext, light)
         }
       }
@@ -148,8 +190,8 @@ class SleepSensorService : Service(), SensorEventListener {
   }
 
   override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    Log.d(TAG, "onStartCommand")
     startTracking()
-    startAudioTracking()
     return START_STICKY
   }
 }

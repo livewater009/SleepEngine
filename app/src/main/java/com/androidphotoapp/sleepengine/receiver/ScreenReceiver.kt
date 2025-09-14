@@ -48,11 +48,10 @@ class ScreenReceiver : BroadcastReceiver() {
     }
   }
 
-  @RequiresApi(Build.VERSION_CODES.O)
   private fun startSensorService(context: Context) {
     val serviceIntent = Intent(context, SleepSensorService::class.java)
-    Log.d("ScreenReceiver", "Starting SleepSensorService")
-    context.startForegroundService(serviceIntent)
+    Log.d("ScreenReceiver", "started foreground service")
+    androidx.core.content.ContextCompat.startForegroundService(context, serviceIntent)
   }
 
   private fun stopSensorService(context: Context) {

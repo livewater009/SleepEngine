@@ -53,7 +53,7 @@ class SleepSensorService : Service(), SensorEventListener {
   private fun startTracking() {
     accelerometer?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
     lightSensor?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
-    Log.d("SleepSensorService", "Sensors registered. Accelerometer: $accelerometer, Light: $lightSensor")
+    Log.d("SleepSensorService", "Started tracking sensors")
   }
 
   private fun stopTracking() {

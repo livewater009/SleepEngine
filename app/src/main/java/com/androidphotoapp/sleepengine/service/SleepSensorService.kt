@@ -51,8 +51,8 @@ class SleepSensorService : Service(), SensorEventListener {
 
   /** Start motion & light sensor tracking */
   private fun startTracking() {
-    accelerometer?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL) }
-    lightSensor?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL) }
+    accelerometer?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
+    lightSensor?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
     Log.d("SleepSensorService", "Started tracking sensors")
   }
 
@@ -105,7 +105,7 @@ class SleepSensorService : Service(), SensorEventListener {
     event?.let {
       Log.d("SensorDebug", "Sensor type: ${it.sensor.type}, values: ${it.values.joinToString()}")
     }
-    
+
     event?.let {
       when (it.sensor.type) {
         Sensor.TYPE_ACCELEROMETER -> {

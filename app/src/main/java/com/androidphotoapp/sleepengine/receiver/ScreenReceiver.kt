@@ -9,6 +9,8 @@ import androidx.annotation.RequiresApi
 import com.androidphotoapp.sleepengine.SleepConstants
 import com.androidphotoapp.sleepengine.service.SleepSensorService
 import com.androidphotoapp.sleepengine.storage.LockTimeStore
+import com.androidphotoapp.sleepengine.storage.SleepLog
+import com.androidphotoapp.sleepengine.storage.SleepLogStore
 import java.util.Calendar
 
 class ScreenReceiver : BroadcastReceiver() {
@@ -34,7 +36,7 @@ class ScreenReceiver : BroadcastReceiver() {
 
         if (lockTime != 0L) {
           val durationMillis = unlockTime - lockTime
-          checkSleep(durationMillis, lockTime)
+          checkSleep(durationMillis, lockTime, context)
           LockTimeStore.clearLockTime(context)
         }
 
@@ -59,7 +61,7 @@ class ScreenReceiver : BroadcastReceiver() {
     context.stopService(serviceIntent)
   }
 
-  private fun checkSleep(durationMillis: Long, lockTimeMillis: Long) {
+  private fun checkSleep(durationMillis: Long, lockTimeMillis: Long, context: Context) {
     val calendar = Calendar.getInstance().apply { timeInMillis = lockTimeMillis }
     val hour = calendar.get(Calendar.HOUR_OF_DAY)
     val minute = calendar.get(Calendar.MINUTE)
@@ -72,9 +74,19 @@ class ScreenReceiver : BroadcastReceiver() {
     if (lockTimeMinutes >= sleepStartMinutes &&
       durationMillis >= SleepConstants.MIN_SLEEP_DURATION_MILLIS
     ) {
-      Log.d("ScreenReceiver", "User is sleeping! Duration: ${durationMillis / 60000} mins")
-    } else {
-      Log.d("ScreenReceiver", "User is awake. Duration: ${durationMillis / 60000} mins")
+      val durationMins = (durationMillis / 60000).toInt()
+      Log.d("ScreenReceiver", "User is sleeping! Duration: $durationMins mins")
+
+      // ✅ Corrected start and end time
+      val startTime = lockTimeMillis + SleepConstants.MIN_SLEEP_DURATION_MILLIS
+      val endTime = System.currentTimeMillis()
+      val sleepScore = 10 // simple fixed score
+
+      SleepLogStore.saveLog(context, SleepLog(startTime, endTime, sleepScore))
+      Log.d(
+        "ScreenReceiver",
+        "Sleep log saved: Start=$startTime, End=$endTime, Score=$sleepScore"
+      )
     }
   }
 }

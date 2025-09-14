@@ -1,11 +1,8 @@
 package com.androidphotoapp.sleepengine
 
 import android.Manifest
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.hardware.Sensor
-import android.hardware.SensorManager
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
@@ -13,34 +10,35 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.androidphotoapp.sleepengine.receiver.ScreenReceiver
-import com.androidphotoapp.sleepengine.service.SleepSensorService
+import com.androidphotoapp.sleepengine.storage.SleepLogStore
+import com.androidphotoapp.sleepengine.storage.SleepLog
 import com.androidphotoapp.sleepengine.ui.theme.SleepEngineTheme
+import java.text.SimpleDateFormat
+import java.util.*
 
 class MainActivity : ComponentActivity() {
 
   private val screenReceiver = ScreenReceiver()
 
+  @RequiresApi(Build.VERSION_CODES.O)
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
     enableEdgeToEdge()
     setContent {
       SleepEngineTheme {
-        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-          TestScreenButtons(
-            modifier = Modifier.padding(innerPadding),
-            activity = this
-          )
-        }
+        MainScreen(activity = this)
       }
     }
 
@@ -52,7 +50,6 @@ class MainActivity : ComponentActivity() {
   private fun checkPermissions() {
     val permissionsToRequest = mutableListOf<String>()
 
-    // RECORD_AUDIO
     if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
       != PackageManager.PERMISSION_GRANTED
     ) {
@@ -71,12 +68,12 @@ class MainActivity : ComponentActivity() {
           Toast.makeText(this, "$permission granted", Toast.LENGTH_SHORT).show()
         } else {
           Toast.makeText(this, "$permission denied", Toast.LENGTH_SHORT).show()
-          // Optional: show rationale dialog here if denied
         }
       }
     }
 
   /** Simulate screen lock/unlock triggers */
+  @RequiresApi(Build.VERSION_CODES.O)
   fun triggerScreenReceiver(action: String) {
     val intent = Intent(action)
     screenReceiver.onReceive(this, intent)
@@ -84,30 +81,73 @@ class MainActivity : ComponentActivity() {
   }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun TestScreenButtons(modifier: Modifier = Modifier, activity: MainActivity) {
+fun MainScreen(activity: MainActivity) {
+  var sleepLogs by remember { mutableStateOf(SleepLogStore.getLogs(activity).toList()) }
+
+  // Observe changes every second (or you can implement a better Flow/LiveData in future)
+  LaunchedEffect(Unit) {
+    while (true) {
+      sleepLogs = SleepLogStore.getLogs(activity).toList()
+      kotlinx.coroutines.delay(1000) // refresh every 1 second
+    }
+  }
+
+  Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    TestScreenButtons(activity = activity)
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    Text("Sleep Logs:", style = MaterialTheme.typography.titleMedium)
+
+    LazyColumn(modifier = Modifier.fillMaxWidth()) {
+      items(sleepLogs) { log ->
+        SleepLogItem(log)
+      }
+    }
+  }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun TestScreenButtons(activity: MainActivity) {
   Row(
-    modifier = modifier
+    modifier = Modifier
       .fillMaxWidth()
       .padding(16.dp),
     horizontalArrangement = Arrangement.spacedBy(16.dp)
   ) {
     Button(
-      onClick = {
-        activity.triggerScreenReceiver(Intent.ACTION_SCREEN_OFF)
-      },
+      onClick = { activity.triggerScreenReceiver(Intent.ACTION_SCREEN_OFF) },
       modifier = Modifier.weight(1f)
     ) {
       Text(text = "Screen Lock")
     }
 
     Button(
-      onClick = {
-        activity.triggerScreenReceiver(Intent.ACTION_SCREEN_ON)
-      },
+      onClick = { activity.triggerScreenReceiver(Intent.ACTION_SCREEN_ON) },
       modifier = Modifier.weight(1f)
     ) {
       Text(text = "Screen Unlock")
     }
+  }
+}
+
+@Composable
+fun SleepLogItem(log: SleepLog) {
+  val sdf = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+  val start = sdf.format(Date(log.startTime))
+  val end = sdf.format(Date(log.endTime))
+
+  Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+    Text("Start: $start")
+    Text("End: $end")
+    Text("Score: ${log.sleepScore}")
+    HorizontalDivider(
+      modifier = Modifier.padding(top = 4.dp),
+      thickness = DividerDefaults.Thickness,
+      color = DividerDefaults.color
+    )
   }
 }

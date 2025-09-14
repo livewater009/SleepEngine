@@ -145,20 +145,6 @@ fun TestScreenButtons(activity: MainActivity) {
     ) {
       Text(text = "Screen Unlock")
     }
-
-    Button(
-      onClick = {
-        // Start foreground service explicitly
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-          val serviceIntent = Intent(activity, SleepSensorService::class.java)
-          ContextCompat.startForegroundService(activity, serviceIntent)
-          Toast.makeText(activity, "Foreground Service Started", Toast.LENGTH_SHORT).show()
-        }
-      },
-      modifier = Modifier.weight(1f)
-    ) {
-      Text(text = "Start Service")
-    }
   }
 }
 

@@ -38,10 +38,18 @@ class SleepSensorService : Service(), SensorEventListener {
 
   override fun onCreate() {
     super.onCreate()
-    Log.d(TAG, "onCreate")
+    Log.d(TAG, "Service onCreate")
 
-    // Start service as foreground
-    startForeground(1, createNotification())
+    // Start foreground service with correct type
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+      startForeground(
+        1,
+        createNotification(),
+        ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+      )
+    } else {
+      startForeground(1, createNotification())
+    }
 
     // Initialize sensors
     sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -60,7 +68,7 @@ class SleepSensorService : Service(), SensorEventListener {
   private fun startTracking() {
     accelerometer?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
     lightSensor?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
-    Log.d(TAG, "Sensors registered. Accelerometer: $accelerometer, Light: $lightSensor")
+    Log.d(TAG, "Sensors registered: Accelerometer=$accelerometer, Light=$lightSensor")
 
     startAudioTrackingSafely()
   }
@@ -72,10 +80,8 @@ class SleepSensorService : Service(), SensorEventListener {
 
   /** Start audio recording safely */
   private fun startAudioTrackingSafely() {
-    // Check audio permission
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-      ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-      != PackageManager.PERMISSION_GRANTED
+      ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
     ) {
       Log.e(TAG, "Audio permission not granted, skipping recording")
       return
@@ -83,30 +89,21 @@ class SleepSensorService : Service(), SensorEventListener {
 
     try {
       tempAudioFile = File.createTempFile("sleep_audio", ".3gp", cacheDir)
-
-      mediaRecorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        MediaRecorder(applicationContext)
-      } else {
-        MediaRecorder()
-      }
-
-      mediaRecorder?.apply {
+      mediaRecorder = MediaRecorder().apply {
         setAudioSource(MediaRecorder.AudioSource.MIC)
         setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
         setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
         setOutputFile(tempAudioFile!!.absolutePath)
-
         prepare()
         start()
-        Log.d(TAG, "Audio tracking started")
       }
 
-      // Background thread to poll amplitude
+      Log.d(TAG, "Audio tracking started")
+
       audioThread = Thread {
         while (mediaRecorder != null) {
           try {
             val amplitude = mediaRecorder?.maxAmplitude ?: 0
-            Log.d(TAG, "Audio amplitude: $amplitude")
             SensorDataStore.saveAudioAmplitude(applicationContext, amplitude.toFloat())
             Thread.sleep(1000)
           } catch (e: InterruptedException) {
@@ -151,16 +148,10 @@ class SleepSensorService : Service(), SensorEventListener {
     event?.let {
       when (it.sensor.type) {
         Sensor.TYPE_ACCELEROMETER -> {
-          val x = it.values[0]
-          val y = it.values[1]
-          val z = it.values[2]
-          Log.d(TAG, "Accelerometer: x=$x, y=$y, z=$z")
-          SensorDataStore.saveMotionData(applicationContext, x, y, z)
+          SensorDataStore.saveMotionData(applicationContext, it.values[0], it.values[1], it.values[2])
         }
         Sensor.TYPE_LIGHT -> {
-          val light = it.values[0]
-          Log.d(TAG, "Light: $light")
-          SensorDataStore.saveLightData(applicationContext, light)
+          SensorDataStore.saveLightData(applicationContext, it.values[0])
         }
       }
     }

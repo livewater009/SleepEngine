@@ -118,6 +118,9 @@ fun MainScreen(activity: MainActivity) {
           .padding(16.dp)
       ) {
 
+        // Test Buttons for lock/unlock simulation
+        TestScreenButtons(activity)
+
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
@@ -136,6 +139,29 @@ fun MainScreen(activity: MainActivity) {
       }
     }
   )
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun TestScreenButtons(activity: MainActivity) {
+  Row(
+    modifier = Modifier.fillMaxWidth(),
+    horizontalArrangement = Arrangement.spacedBy(16.dp)
+  ) {
+    Button(
+      onClick = { activity.triggerScreenReceiver(Intent.ACTION_SCREEN_OFF) },
+      modifier = Modifier.weight(1f)
+    ) {
+      Text("Screen Lock")
+    }
+
+    Button(
+      onClick = { activity.triggerScreenReceiver(Intent.ACTION_SCREEN_ON) },
+      modifier = Modifier.weight(1f)
+    ) {
+      Text("Screen Unlock")
+    }
+  }
 }
 
 @Composable

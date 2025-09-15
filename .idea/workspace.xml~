@@ -10,9 +10,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8d060f80-36c6-4f17-afe2-df4fd6385e4e" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/androidphotoapp/sleepengine/Constants.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/androidphotoapp/sleepengine/Constants.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/com/androidphotoapp/sleepengine/MainActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/androidphotoapp/sleepengine/MainActivity.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/androidphotoapp/sleepengine/service/SleepSensorService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/androidphotoapp/sleepengine/service/SleepSensorService.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

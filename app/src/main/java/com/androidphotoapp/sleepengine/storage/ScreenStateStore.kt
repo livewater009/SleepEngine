@@ -1,0 +1,19 @@
+package com.androidphotoapp.sleepengine.storage
+
+import android.content.Context
+import androidx.core.content.edit
+
+object ScreenStateStore {
+  private const val PREFS_NAME = "screen_state_prefs"
+  private const val KEY_LAST_STATE = "last_screen_state"
+
+  fun getLastState(context: Context): Boolean {
+    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    return prefs.getBoolean(KEY_LAST_STATE, true) // default assume screen ON
+  }
+
+  fun setLastState(context: Context, isScreenOn: Boolean) {
+    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    prefs.edit { putBoolean(KEY_LAST_STATE, isScreenOn) }
+  }
+}

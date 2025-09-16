@@ -7,7 +7,9 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import com.androidphotoapp.sleepengine.SleepConstants
+import com.androidphotoapp.sleepengine.SleepUtils
 import com.androidphotoapp.sleepengine.storage.LockTimeStore
+import com.androidphotoapp.sleepengine.storage.ScreenStateStore
 import com.androidphotoapp.sleepengine.storage.SleepLog
 import com.androidphotoapp.sleepengine.storage.SleepLogStore
 import java.util.Calendar
@@ -22,6 +24,7 @@ class ScreenReceiver : BroadcastReceiver() {
       Intent.ACTION_SCREEN_OFF -> {
         val lockTime = System.currentTimeMillis()
         LockTimeStore.saveLockTime(context, lockTime)
+        ScreenStateStore.setLastState(context, false)
         Log.d("ScreenReceiver", "Screen OFF (Locked) at $lockTime")
       }
 
@@ -31,40 +34,14 @@ class ScreenReceiver : BroadcastReceiver() {
 
         if (lockTime != 0L) {
           val durationMillis = unlockTime - lockTime
-          checkSleep(durationMillis, lockTime, context)
+
+          SleepUtils.checkSleep(durationMillis, lockTime, context)
           LockTimeStore.clearLockTime(context)
         }
 
+        ScreenStateStore.setLastState(context, true)
         Log.d("ScreenReceiver", "Screen UNLOCKED at $unlockTime")
-
-      //        stopSensorService(context)
       }
-    }
-  }
-
-  /** Check sleep and save sleep log */
-  private fun checkSleep(durationMillis: Long, lockTimeMillis: Long, context: Context) {
-    val calendar = Calendar.getInstance().apply { timeInMillis = lockTimeMillis }
-    val hour = calendar.get(Calendar.HOUR_OF_DAY)
-    val minute = calendar.get(Calendar.MINUTE)
-
-    Log.d("ScreenReceiver", "Lock Time: $hour:$minute")
-
-    val lockTimeMinutes = hour * 60 + minute
-    val sleepStartMinutes = SleepConstants.SLEEP_START_HOUR * 60 + SleepConstants.SLEEP_START_MINUTE
-
-    if (lockTimeMinutes >= sleepStartMinutes && durationMillis >= SleepConstants.MIN_SLEEP_DURATION_MILLIS) {
-      val durationMins = (durationMillis / 60000).toInt()
-      Log.d("ScreenReceiver", "User is sleeping! Duration: $durationMins mins")
-
-      val startTime = lockTimeMillis + SleepConstants.MIN_SLEEP_DURATION_MILLIS
-      val endTime = System.currentTimeMillis()
-      val sleepScore = 0
-
-      SleepLogStore.saveLog(context, SleepLog(startTime, endTime, sleepScore))
-
-      Log.d("ScreenReceiver", "Sleep log saved: Start=$startTime, End=$endTime, Score=$sleepScore"
-      )
     }
   }
 }

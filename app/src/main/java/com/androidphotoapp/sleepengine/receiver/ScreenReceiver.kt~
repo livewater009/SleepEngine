@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import com.androidphotoapp.sleepengine.SleepConstants
 import com.androidphotoapp.sleepengine.storage.LockTimeStore
+import com.androidphotoapp.sleepengine.storage.ScreenStateStore
 import com.androidphotoapp.sleepengine.storage.SleepLog
 import com.androidphotoapp.sleepengine.storage.SleepLogStore
 import java.util.Calendar
@@ -22,6 +23,7 @@ class ScreenReceiver : BroadcastReceiver() {
       Intent.ACTION_SCREEN_OFF -> {
         val lockTime = System.currentTimeMillis()
         LockTimeStore.saveLockTime(context, lockTime)
+        ScreenStateStore.setLastState(context, false)
         Log.d("ScreenReceiver", "Screen OFF (Locked) at $lockTime")
       }
 
@@ -35,9 +37,8 @@ class ScreenReceiver : BroadcastReceiver() {
           LockTimeStore.clearLockTime(context)
         }
 
+        ScreenStateStore.setLastState(context, true)
         Log.d("ScreenReceiver", "Screen UNLOCKED at $unlockTime")
-
-      //        stopSensorService(context)
       }
     }
   }
@@ -63,9 +64,7 @@ class ScreenReceiver : BroadcastReceiver() {
 
       SleepLogStore.saveLog(context, SleepLog(startTime, endTime, sleepScore))
 
-      Log.d(
-        "ScreenReceiver",
-        "Sleep log saved: Start=$startTime, End=$endTime, Score=$sleepScore"
+      Log.d("ScreenReceiver", "Sleep log saved: Start=$startTime, End=$endTime, Score=$sleepScore"
       )
     }
   }

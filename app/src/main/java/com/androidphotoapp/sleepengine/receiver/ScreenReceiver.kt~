@@ -63,7 +63,9 @@ class ScreenReceiver : BroadcastReceiver() {
 
       SleepLogStore.saveLog(context, SleepLog(startTime, endTime, sleepScore))
 
-      Log.d("ScreenReceiver", "Sleep log saved: Start=$startTime, End=$endTime, Score=$sleepScore"
+      Log.d(
+        "ScreenReceiver",
+        "Sleep log saved: Start=$startTime, End=$endTime, Score=$sleepScore"
       )
     }
   }

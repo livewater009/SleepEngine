@@ -10,8 +10,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8d060f80-36c6-4f17-afe2-df4fd6385e4e" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/androidphotoapp/sleepengine/Constants.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/androidphotoapp/sleepengine/Constants.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/com/androidphotoapp/sleepengine/MainActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/androidphotoapp/sleepengine/MainActivity.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/androidphotoapp/sleepengine/receiver/ScreenReceiver.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/androidphotoapp/sleepengine/receiver/ScreenReceiver.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -21,7 +22,7 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[DeviceId(pluginId=LocalEmulator, isTemplate=false, identifier=path=C:\Users\dev\.android\avd\Medium_Phone.avd)]" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[]" />
   <component name="ExternalProjectsData">
     <projectState path="$PROJECT_DIR$">
       <ProjectState />
@@ -164,12 +165,12 @@
       <map>
         <entry key="com.androidphotoapp.sleepengine">
           <value>
-            <CheckInfo lastCheckTimestamp="1757812158908" />
+            <CheckInfo lastCheckTimestamp="1757959284731" />
           </value>
         </entry>
         <entry key="com.androidphotoapp.sleepengine.test">
           <value>
-            <CheckInfo lastCheckTimestamp="1757812158906" />
+            <CheckInfo lastCheckTimestamp="1757959284760" />
           </value>
         </entry>
       </map>

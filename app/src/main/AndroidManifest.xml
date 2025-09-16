@@ -4,13 +4,7 @@
 
     <!-- Permissions -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
-    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
-
-    <!-- For Android 12+ (required for microphone use in foreground service) -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"
-        tools:targetApi="s" />
 
     <application
         android:allowBackup="true"
@@ -42,12 +36,5 @@
                 <action android:name="android.intent.action.SCREEN_OFF" />
             </intent-filter>
         </receiver>
-
-        <!-- Sleep Sensor Foreground Service -->
-        <service
-            android:name=".service.SleepSensorService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="microphone" />
     </application>
 </manifest>

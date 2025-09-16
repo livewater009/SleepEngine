@@ -15,8 +15,6 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -45,9 +43,6 @@ class MainActivity : ComponentActivity() {
       }
     }
 
-    // Check permissions
-    checkPermissions()
-
     // Dynamically register screen on/off receiver
     val filter = IntentFilter().apply {
       addAction(Intent.ACTION_SCREEN_ON)
@@ -59,40 +54,6 @@ class MainActivity : ComponentActivity() {
   override fun onDestroy() {
     super.onDestroy()
     unregisterReceiver(screenReceiver)
-  }
-
-  /** Runtime permission check */
-  private fun checkPermissions() {
-    val permissionsToRequest = mutableListOf<String>()
-
-    if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-      != PackageManager.PERMISSION_GRANTED
-    ) {
-      permissionsToRequest.add(Manifest.permission.RECORD_AUDIO)
-    }
-
-    if (permissionsToRequest.isNotEmpty()) {
-      permissionLauncher.launch(permissionsToRequest.toTypedArray())
-    }
-  }
-
-  private val permissionLauncher =
-    registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
-      results.forEach { (permission, granted) ->
-        if (granted) {
-          Toast.makeText(this, "$permission granted", Toast.LENGTH_SHORT).show()
-        } else {
-          Toast.makeText(this, "$permission denied", Toast.LENGTH_SHORT).show()
-        }
-      }
-    }
-
-  /** Simulate screen lock/unlock triggers for testing */
-  @RequiresApi(Build.VERSION_CODES.O)
-  fun triggerScreenReceiver(action: String) {
-    val intent = Intent(action)
-    screenReceiver.onReceive(this, intent)
-    Toast.makeText(this, "Triggered: $action", Toast.LENGTH_SHORT).show()
   }
 }
 
@@ -151,7 +112,6 @@ fun SleepLogCard(log: SleepLog) {
     Column(modifier = Modifier.padding(16.dp)) {
       Text("Start: $start", style = MaterialTheme.typography.bodyLarge)
       Text("End: $end", style = MaterialTheme.typography.bodyLarge)
-      Text("Score: ${log.sleepScore}", style = MaterialTheme.typography.bodyMedium)
     }
   }
 }

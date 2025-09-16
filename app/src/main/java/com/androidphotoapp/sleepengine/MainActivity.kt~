@@ -15,8 +15,6 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -44,9 +42,6 @@ class MainActivity : ComponentActivity() {
         MainScreen(activity = this)
       }
     }
-
-    // Check permissions
-    checkPermissions()
 
     // Dynamically register screen on/off receiver
     val filter = IntentFilter().apply {
@@ -118,9 +113,6 @@ fun MainScreen(activity: MainActivity) {
           .padding(16.dp)
       ) {
 
-        // Test Buttons for lock/unlock simulation
-        TestScreenButtons(activity)
-
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
@@ -141,29 +133,6 @@ fun MainScreen(activity: MainActivity) {
   )
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-fun TestScreenButtons(activity: MainActivity) {
-  Row(
-    modifier = Modifier.fillMaxWidth(),
-    horizontalArrangement = Arrangement.spacedBy(16.dp)
-  ) {
-    Button(
-      onClick = { activity.triggerScreenReceiver(Intent.ACTION_SCREEN_OFF) },
-      modifier = Modifier.weight(1f)
-    ) {
-      Text("Screen Lock")
-    }
-
-    Button(
-      onClick = { activity.triggerScreenReceiver(Intent.ACTION_SCREEN_ON) },
-      modifier = Modifier.weight(1f)
-    ) {
-      Text("Screen Unlock")
-    }
-  }
-}
-
 @Composable
 fun SleepLogCard(log: SleepLog) {
   val sdf = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
@@ -177,7 +146,7 @@ fun SleepLogCard(log: SleepLog) {
     Column(modifier = Modifier.padding(16.dp)) {
       Text("Start: $start", style = MaterialTheme.typography.bodyLarge)
       Text("End: $end", style = MaterialTheme.typography.bodyLarge)
-      Text("Score: ${log.sleepScore}", style = MaterialTheme.typography.bodyMedium)
+//      Text("Score: ${log.sleepScore}", style = MaterialTheme.typography.bodyMedium)
     }
   }
 }

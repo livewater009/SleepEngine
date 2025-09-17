@@ -18,9 +18,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.androidphotoapp.sleepengine.receiver.ScreenReceiver
 import com.androidphotoapp.sleepengine.storage.LockTimeStore
@@ -53,8 +52,8 @@ class MainActivity : ComponentActivity() {
     }
     registerReceiver(screenReceiver, filter)
 
-    // 3️⃣ Schedule periodic WorkManager fallback
-    scheduleScreenCheckWorker()
+    // 3️⃣ Schedule the chained worker
+    scheduleChainedWorker(intervalMinutes = SleepConstants.WORK_INTERVAL)
 
     setContent {
       SleepEngineTheme {
@@ -96,29 +95,25 @@ class MainActivity : ComponentActivity() {
     ScreenStateStore.setLastState(this, isScreenOn)
   }
 
-  /** Schedule periodic WorkManager to catch missed events */
-  private fun scheduleScreenCheckWorker() {
+  /** Schedule a repeating worker using OneTimeWorkRequest chaining */
+  fun scheduleChainedWorker(intervalMinutes: Int = 5) {
     val workManager = WorkManager.getInstance(applicationContext)
 
-    // Cancel any existing work first
-    workManager.cancelUniqueWork("sleep_work")
+    // Cancel any existing chained work first
+    workManager.cancelUniqueWork("sleep_work_chain")
 
-    // Periodic fallback worker (minimum 15 min interval)
-    val periodicWorkRequest = PeriodicWorkRequestBuilder<ScreenCheckWorker>(
-      SleepConstants.WORK_INTERVAL, TimeUnit.MINUTES
-    ).build()
+    // Schedule the first worker
+    val work = OneTimeWorkRequestBuilder<ScreenCheckWorker>()
+      .setInitialDelay(intervalMinutes.toLong(), TimeUnit.MINUTES)
+      .build()
 
-    workManager.enqueueUniquePeriodicWork(
-      "sleep_work",
-      ExistingPeriodicWorkPolicy.REPLACE,
-      periodicWorkRequest
+    WorkManager.getInstance(applicationContext).enqueueUniqueWork(
+      "sleep_work_chain",
+      ExistingWorkPolicy.REPLACE,
+      listOf(work)
     )
-  }
 
-  /** Trigger the worker manually (for testing or immediate fallback) */
-  fun triggerSleepWorkerNow() {
-    val oneTimeWork = OneTimeWorkRequestBuilder<ScreenCheckWorker>().build()
-    WorkManager.getInstance(this).enqueue(oneTimeWork)
+    Log.e("MainActivity: ", "🔥 Scheduled Worker")
   }
 }
 
@@ -147,16 +142,6 @@ fun MainScreen(activity: MainActivity) {
 
         Text("Sleep Logs", style = MaterialTheme.typography.titleLarge)
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Button to trigger worker manually
-        Button(
-          onClick = { activity.triggerSleepWorkerNow() },
-          modifier = Modifier.fillMaxWidth()
-        ) {
-          Text("Run Sleep Worker Now")
-        }
-
         Spacer(modifier = Modifier.height(16.dp))
 
         LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -169,7 +154,6 @@ fun MainScreen(activity: MainActivity) {
     }
   )
 }
-
 
 @Composable
 fun SleepLogCard(log: SleepLog) {

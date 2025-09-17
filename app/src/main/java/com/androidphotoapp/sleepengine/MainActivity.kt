@@ -17,7 +17,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
@@ -42,20 +41,21 @@ class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
+    enableEdgeToEdge()
+
     // 1️⃣ Detect missed screen events while app was closed
     checkScreenStateOnStart()
 
-    // 2️⃣ Dynamically register screen on/off receiver
+    // 2️⃣ Dynamically register screen ON/OFF receiver
     val filter = IntentFilter().apply {
       addAction(Intent.ACTION_SCREEN_ON)
       addAction(Intent.ACTION_SCREEN_OFF)
     }
     registerReceiver(screenReceiver, filter)
 
-    // 3️⃣ Schedule WorkManager
+    // 3️⃣ Schedule periodic WorkManager fallback
     scheduleScreenCheckWorker()
 
-    enableEdgeToEdge()
     setContent {
       SleepEngineTheme {
         MainScreen(activity = this)
@@ -68,6 +68,7 @@ class MainActivity : ComponentActivity() {
     unregisterReceiver(screenReceiver)
   }
 
+  /** Check screen state on app start to handle missed events */
   private fun checkScreenStateOnStart() {
     val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
     val isScreenOn = powerManager.isInteractive
@@ -89,28 +90,35 @@ class MainActivity : ComponentActivity() {
         LockTimeStore.clearLockTime(this)
       }
 
-      Log.i("ScreenCheck", "Screen ON detected on app start: $unlockTime")
+      Log.i("MainActivity", "Screen ON detected on app start: $unlockTime")
     }
 
     ScreenStateStore.setLastState(this, isScreenOn)
   }
 
+  /** Schedule periodic WorkManager to catch missed events */
   private fun scheduleScreenCheckWorker() {
-    val workManager = WorkManager.getInstance(this)
+    val workManager = WorkManager.getInstance(applicationContext)
 
-    // Periodic work request with tag
-    val periodicWork = PeriodicWorkRequestBuilder<ScreenCheckWorker>(
+    // Cancel any existing work first
+    workManager.cancelUniqueWork("sleep_work")
+
+    // Periodic fallback worker (minimum 15 min interval)
+    val periodicWorkRequest = PeriodicWorkRequestBuilder<ScreenCheckWorker>(
       SleepConstants.WORK_INTERVAL, TimeUnit.MINUTES
-    )
-      .addTag("screen_check_work")
-      .build()
+    ).build()
 
-    // Enqueue unique periodic work
     workManager.enqueueUniquePeriodicWork(
-      "screen_check_work",
+      "sleep_work",
       ExistingPeriodicWorkPolicy.REPLACE,
-      periodicWork
+      periodicWorkRequest
     )
+  }
+
+  /** Trigger the worker manually (for testing or immediate fallback) */
+  fun triggerSleepWorkerNow() {
+    val oneTimeWork = OneTimeWorkRequestBuilder<ScreenCheckWorker>().build()
+    WorkManager.getInstance(this).enqueue(oneTimeWork)
   }
 }
 
@@ -135,15 +143,21 @@ fun MainScreen(activity: MainActivity) {
           .padding(padding)
           .padding(16.dp)
       ) {
-
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(
-          "Sleep Logs",
-          style = MaterialTheme.typography.titleLarge
-        )
+        Text("Sleep Logs", style = MaterialTheme.typography.titleLarge)
 
         Spacer(modifier = Modifier.height(8.dp))
+
+        // Button to trigger worker manually
+        Button(
+          onClick = { activity.triggerSleepWorkerNow() },
+          modifier = Modifier.fillMaxWidth()
+        ) {
+          Text("Run Sleep Worker Now")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         LazyColumn(modifier = Modifier.fillMaxSize()) {
           items(sleepLogs) { log ->
@@ -155,6 +169,7 @@ fun MainScreen(activity: MainActivity) {
     }
   )
 }
+
 
 @Composable
 fun SleepLogCard(log: SleepLog) {

@@ -75,10 +75,16 @@ class MainActivity : ComponentActivity() {
     val packageName = packageName
 
     if (!pm.isIgnoringBatteryOptimizations(packageName)) {
-      // Open the system settings screen
-      val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-      intent.data = "package:$packageName".toUri()
-      startActivity(intent)
+      try {
+        // This works for Google/stock devices
+        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+        intent.data = Uri.parse("package:$packageName")
+        startActivity(intent)
+      } catch (e: Exception) {
+        // Fallback: open full battery optimization settings
+        val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+        startActivity(intent)
+      }
 
       Toast.makeText(
         this,
@@ -87,6 +93,7 @@ class MainActivity : ComponentActivity() {
       ).show()
     }
   }
+
 
   override fun onDestroy() {
     super.onDestroy()

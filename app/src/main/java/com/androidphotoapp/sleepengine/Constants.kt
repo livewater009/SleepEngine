@@ -12,5 +12,5 @@ object SleepConstants {
   val SLEEP_END_HOUR = 7         // 7 AM
 
   val MIN_SLEEP_DURATION_MILLIS = TimeUnit.MINUTES.toMillis(5)
-  const val WORK_INTERVAL = 1
+  const val WORK_INTERVAL = 10
 }

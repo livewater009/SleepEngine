@@ -3,6 +3,7 @@ package com.androidphotoapp.sleepengine
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
@@ -33,6 +34,7 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import android.provider.Settings
 import android.widget.Toast
+import androidx.core.net.toUri
 
 class MainActivity : ComponentActivity() {
 
@@ -75,6 +77,7 @@ class MainActivity : ComponentActivity() {
     if (!pm.isIgnoringBatteryOptimizations(packageName)) {
       // Open the system settings screen
       val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+      intent.data = "package:$packageName".toUri()
       startActivity(intent)
 
       Toast.makeText(

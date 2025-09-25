@@ -13,6 +13,7 @@
       <change beforePath="$PROJECT_DIR$/.idea/deploymentTargetSelector.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/deploymentTargetSelector.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/release/baselineProfiles/0/app-release.dm" beforeDir="false" afterPath="$PROJECT_DIR$/app/release/baselineProfiles/0/app-release.dm" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/release/baselineProfiles/1/app-release.dm" beforeDir="false" afterPath="$PROJECT_DIR$/app/release/baselineProfiles/1/app-release.dm" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/androidphotoapp/sleepengine/MainActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/androidphotoapp/sleepengine/MainActivity.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/com/androidphotoapp/sleepengine/worker/ScreenCheckWorker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/androidphotoapp/sleepengine/worker/ScreenCheckWorker.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />

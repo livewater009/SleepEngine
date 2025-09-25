@@ -1,9 +1,11 @@
 package com.androidphotoapp.sleepengine
 
+import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -29,6 +31,8 @@ import com.androidphotoapp.sleepengine.worker.ScreenCheckWorker
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
+import android.provider.Settings
+import android.widget.Toast
 
 class MainActivity : ComponentActivity() {
 
@@ -37,6 +41,9 @@ class MainActivity : ComponentActivity() {
   @RequiresApi(Build.VERSION_CODES.O)
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+
+    // Prompt user to disable battery optimization
+    requestBatteryOptimizationIgnore()
 
     enableEdgeToEdge()
 
@@ -58,6 +65,23 @@ class MainActivity : ComponentActivity() {
       SleepEngineTheme {
         MainScreen(activity = this)
       }
+    }
+  }
+
+  private fun requestBatteryOptimizationIgnore() {
+    val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+    val packageName = packageName
+
+    if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+      // Open the system settings screen
+      val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+      startActivity(intent)
+
+      Toast.makeText(
+        this,
+        "Please select 'Unrestricted' or 'Don't optimize' for this app to run properly in background.",
+        Toast.LENGTH_LONG
+      ).show()
     }
   }
 

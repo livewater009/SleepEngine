@@ -22,13 +22,13 @@ class ScreenReceiver : BroadcastReceiver() {
         val lockTime = System.currentTimeMillis()
         LockTimeStore.saveLockTime(context, lockTime)
         ScreenStateStore.setLastState(context, false)
-        Log.d("ScreenReceiver", "Screen OFF (Locked) at $lockTime")
+        Log.e("ScreenReceiver", "🔥 Screen OFF (Locked) at $lockTime")
       }
 
       // When screen is turned on (but not necessarily unlocked yet)
       Intent.ACTION_SCREEN_ON -> {
         ScreenStateStore.setLastState(context, true)
-        Log.d("ScreenReceiver", "Screen ON (but not yet unlocked)")
+        Log.e("ScreenReceiver", "🔥 Screen ON (but not yet unlocked)")
       }
 
       // When the user actually unlocks the phone
@@ -42,7 +42,7 @@ class ScreenReceiver : BroadcastReceiver() {
           LockTimeStore.clearLockTime(context)
         }
 
-        Log.d("ScreenReceiver", "User PRESENT (Unlocked) at $unlockTime")
+        Log.e("ScreenReceiver", "🔥 User PRESENT (Unlocked) at $unlockTime\"")
       }
     }
   }

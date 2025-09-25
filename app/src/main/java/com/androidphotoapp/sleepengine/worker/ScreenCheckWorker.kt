@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.androidphotoapp.sleepengine.ScreenStateHandler
@@ -22,11 +23,13 @@ class ScreenCheckWorker(
 
   override suspend fun doWork(): Result {
     Log.e("ScreenCheckWorker", "🔥 Running ScreenCheckWorker")
-    ScreenStateHandler.handleStateCheck(applicationContext, "ScreenCheckWorker")
-
-    // Reschedule next worker
-    Log.e("ScreenCheckWorker", "🔥 Reschedule next work")
-    scheduleNextWorker(SleepConstants.WORK_INTERVAL)
+    try {
+      ScreenStateHandler.handleStateCheck(applicationContext, "ScreenCheckWorker")
+    } finally {
+      // Reschedule next worker
+      Log.e("ScreenCheckWorker", "🔥 Reschedule next work")
+      scheduleNextWorker(SleepConstants.WORK_INTERVAL)
+    }
 
     return Result.success()
   }
@@ -35,6 +38,7 @@ class ScreenCheckWorker(
   private fun scheduleNextWorker(intervalMinutes: Int) {
     val work = OneTimeWorkRequestBuilder<ScreenCheckWorker>()
       .setInitialDelay(intervalMinutes.toLong(), TimeUnit.MINUTES)
+//      .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
       .build()
 
     WorkManager.getInstance(applicationContext).enqueueUniqueWork(

@@ -24,8 +24,8 @@ class ScreenCheckWorker(
     Log.e("ScreenCheckWorker", "🔥 Running ScreenCheckWorker")
     ScreenStateHandler.handleStateCheck(applicationContext, "ScreenCheckWorker")
 
-    // Reschedule next worker
     Log.e("ScreenCheckWorker", "🔥 Reschedule next work")
+    // Reschedule next worker
     scheduleNextWorker(SleepConstants.WORK_INTERVAL)
 
     return Result.success()

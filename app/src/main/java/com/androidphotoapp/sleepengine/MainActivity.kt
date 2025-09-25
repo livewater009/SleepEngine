@@ -1,11 +1,9 @@
 package com.androidphotoapp.sleepengine
 
-import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
-import android.os.PowerManager
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -22,8 +20,6 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.androidphotoapp.sleepengine.receiver.ScreenReceiver
-import com.androidphotoapp.sleepengine.storage.LockTimeStore
-import com.androidphotoapp.sleepengine.storage.ScreenStateStore
 import com.androidphotoapp.sleepengine.storage.SleepLog
 import com.androidphotoapp.sleepengine.storage.SleepLogStore
 import com.androidphotoapp.sleepengine.ui.theme.SleepEngineTheme
@@ -43,7 +39,7 @@ class MainActivity : ComponentActivity() {
     enableEdgeToEdge()
 
     // 1️⃣ Detect missed screen events while app was closed
-    checkScreenStateOnStart()
+    ScreenStateHandler.handleStateCheck(this, "MainActivity")
 
     // 2️⃣ Dynamically register screen ON/OFF receiver
     val filter = IntentFilter().apply {
@@ -66,34 +62,6 @@ class MainActivity : ComponentActivity() {
   override fun onDestroy() {
     super.onDestroy()
     unregisterReceiver(screenReceiver)
-  }
-
-  /** Check screen state on app start to handle missed events */
-  private fun checkScreenStateOnStart() {
-    val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-    val isScreenOn = powerManager.isInteractive
-    val previousState = ScreenStateStore.getLastState(this)
-
-    if (!isScreenOn && previousState) {
-      val lockTime = System.currentTimeMillis()
-      LockTimeStore.saveLockTime(this, lockTime)
-      Log.i("MainActivity", "Screen OFF detected on app start: $lockTime")
-    }
-
-    if (isScreenOn && !previousState) {
-      val unlockTime = System.currentTimeMillis()
-      val lockTime = LockTimeStore.getLockTime(this)
-
-      if (lockTime != 0L) {
-        val durationMillis = unlockTime - lockTime
-        SleepUtils.checkSleep(durationMillis, lockTime, this)
-        LockTimeStore.clearLockTime(this)
-      }
-
-      Log.i("MainActivity", "Screen ON detected on app start: $unlockTime")
-    }
-
-    ScreenStateStore.setLastState(this, isScreenOn)
   }
 
   /** Schedule a repeating worker using OneTimeWorkRequest chaining */

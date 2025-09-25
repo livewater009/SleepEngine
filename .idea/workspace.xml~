@@ -10,10 +10,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8d060f80-36c6-4f17-afe2-df4fd6385e4e" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/com/androidphotoapp/sleepengine/ScreenStateHandler.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/deploymentTargetSelector.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/deploymentTargetSelector.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/androidphotoapp/sleepengine/Constants.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/androidphotoapp/sleepengine/Constants.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/androidphotoapp/sleepengine/receiver/ScreenReceiver.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/androidphotoapp/sleepengine/receiver/ScreenReceiver.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/androidphotoapp/sleepengine/worker/ScreenCheckWorker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/androidphotoapp/sleepengine/worker/ScreenCheckWorker.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

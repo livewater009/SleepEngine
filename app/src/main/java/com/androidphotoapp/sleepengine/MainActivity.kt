@@ -23,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.work.*
 import com.androidphotoapp.sleepengine.receiver.ScreenReceiver
+import com.androidphotoapp.sleepengine.storage.LockTimeStore
+import com.androidphotoapp.sleepengine.storage.ScreenStateStore
 import com.androidphotoapp.sleepengine.storage.SleepLog
 import com.androidphotoapp.sleepengine.storage.SleepLogStore
 import com.androidphotoapp.sleepengine.ui.theme.SleepEngineTheme

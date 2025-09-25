@@ -73,7 +73,7 @@ class MainActivity : ComponentActivity() {
     val isScreenOn = powerManager.isInteractive
     val previousState = ScreenStateStore.getLastState(this)
 
-    Log.e("MainActivity", "🔥 Startup: previousState=$previousState, isScreenOn=$isScreenOn")
+    Log.e("MainActivity", "Startup: previousState=$previousState, isScreenOn=$isScreenOn")
 
     if (previousState == null) {
       // First run, just save current state
@@ -83,7 +83,7 @@ class MainActivity : ComponentActivity() {
       if (!isScreenOn) {
         // Screen turned OFF while app was closed
         LockTimeStore.saveLockTime(this, now)
-        Log.e("MainActivity", "🔥 Detected missed screen OFF at $now")
+        Log.i("MainActivity", "Detected missed screen OFF at $now")
       } else {
         // Screen turned ON while app was closed
         val lockTime = LockTimeStore.getLockTime(this)
@@ -91,7 +91,7 @@ class MainActivity : ComponentActivity() {
           val duration = now - lockTime
           SleepUtils.checkSleep(duration, lockTime, this)
           LockTimeStore.clearLockTime(this)
-          Log.e("MainActivity", "🔥 Detected missed screen ON at $now, duration=$duration")
+          Log.i("MainActivity", "Detected missed screen ON at $now, duration=$duration")
         }
       }
       ScreenStateStore.setLastState(this, isScreenOn)

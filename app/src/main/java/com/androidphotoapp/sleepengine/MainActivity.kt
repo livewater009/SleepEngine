@@ -7,7 +7,9 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
+import android.provider.Settings
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -19,11 +21,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
+import androidx.work.*
 import com.androidphotoapp.sleepengine.receiver.ScreenReceiver
 import com.androidphotoapp.sleepengine.storage.SleepLog
 import com.androidphotoapp.sleepengine.storage.SleepLogStore
@@ -32,9 +30,6 @@ import com.androidphotoapp.sleepengine.worker.ScreenCheckWorker
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
-import android.provider.Settings
-import android.widget.Toast
-import androidx.core.net.toUri
 
 class MainActivity : ComponentActivity() {
 
@@ -44,13 +39,13 @@ class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
+    enableEdgeToEdge()
+
     // Prompt user to disable battery optimization
     requestBatteryOptimizationIgnore()
 
-    enableEdgeToEdge()
-
-    // 1️⃣ Detect missed screen events while app was closed
-    ScreenStateHandler.handleStateCheck(this, "MainActivity")
+    // 1️⃣ Initialize screen state and handle missed events
+    initScreenState()
 
     // 2️⃣ Dynamically register screen ON/OFF receiver
     val filter = IntentFilter().apply {
@@ -60,7 +55,7 @@ class MainActivity : ComponentActivity() {
     }
     registerReceiver(screenReceiver, filter)
 
-    // 3️⃣ Schedule the chained worker
+    // 3️⃣ Schedule the chained worker + periodic safety net
     scheduleChainedWorker(intervalMinutes = SleepConstants.WORK_INTERVAL)
 
     setContent {
@@ -70,18 +65,48 @@ class MainActivity : ComponentActivity() {
     }
   }
 
+  /** Initialize screen state and handle missed events */
+  private fun initScreenState() {
+    val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+    val isScreenOn = powerManager.isInteractive
+    val previousState = ScreenStateStore.getLastState(this)
+
+    Log.i("MainActivity", "Startup: previousState=$previousState, isScreenOn=$isScreenOn")
+
+    if (previousState == null) {
+      // First run, just save current state
+      ScreenStateStore.setLastState(this, isScreenOn)
+    } else if (previousState != isScreenOn) {
+      val now = System.currentTimeMillis()
+      if (!isScreenOn) {
+        // Screen turned OFF while app was closed
+        LockTimeStore.saveLockTime(this, now)
+        Log.i("MainActivity", "Detected missed screen OFF at $now")
+      } else {
+        // Screen turned ON while app was closed
+        val lockTime = LockTimeStore.getLockTime(this)
+        if (lockTime != 0L) {
+          val duration = now - lockTime
+          SleepUtils.checkSleep(duration, lockTime, this)
+          LockTimeStore.clearLockTime(this)
+          Log.i("MainActivity", "Detected missed screen ON at $now, duration=$duration")
+        }
+      }
+      ScreenStateStore.setLastState(this, isScreenOn)
+    }
+  }
+
   private fun requestBatteryOptimizationIgnore() {
     val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
     val packageName = packageName
 
-    if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !pm.isIgnoringBatteryOptimizations(packageName)) {
       try {
-        // This works for Google/stock devices
         val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
         intent.data = Uri.parse("package:$packageName")
         startActivity(intent)
       } catch (e: Exception) {
-        // Fallback: open full battery optimization settings
+        // fallback
         val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
         startActivity(intent)
       }
@@ -94,26 +119,25 @@ class MainActivity : ComponentActivity() {
     }
   }
 
-
   override fun onDestroy() {
     super.onDestroy()
     unregisterReceiver(screenReceiver)
   }
 
-  /** Schedule a repeating worker using OneTimeWorkRequest chaining */
+  /** Schedule a repeating worker using OneTimeWorkRequest chaining + periodic fallback */
   fun scheduleChainedWorker(intervalMinutes: Int = 5) {
     val workManager = WorkManager.getInstance(applicationContext)
 
     // Cancel any existing chained work first
     workManager.cancelUniqueWork("sleep_work_chain")
 
-    // Schedule the first worker
+    // Schedule the first 10-min worker
     val initialWork = OneTimeWorkRequestBuilder<ScreenCheckWorker>()
       .setInitialDelay(intervalMinutes.toLong(), TimeUnit.MINUTES)
       .addTag("sleep_worker")
       .build()
 
-    WorkManager.getInstance(applicationContext).enqueueUniqueWork(
+    workManager.enqueueUniqueWork(
       "sleep_work_chain",
       ExistingWorkPolicy.REPLACE,
       listOf(initialWork)

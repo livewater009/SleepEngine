@@ -23,13 +23,11 @@ class ScreenCheckWorker(
 
   override suspend fun doWork(): Result {
     Log.e("ScreenCheckWorker", "🔥 Running ScreenCheckWorker")
-    try {
-      ScreenStateHandler.handleStateCheck(applicationContext, "ScreenCheckWorker")
-    } finally {
-      // Reschedule next worker
-      Log.e("ScreenCheckWorker", "🔥 Reschedule next work")
-      scheduleNextWorker(SleepConstants.WORK_INTERVAL)
-    }
+    ScreenStateHandler.handleStateCheck(applicationContext, "ScreenCheckWorker")
+
+    // Reschedule next worker
+    Log.e("ScreenCheckWorker", "🔥 Reschedule next work")
+    scheduleNextWorker(SleepConstants.WORK_INTERVAL)
 
     return Result.success()
   }
@@ -38,7 +36,6 @@ class ScreenCheckWorker(
   private fun scheduleNextWorker(intervalMinutes: Int) {
     val work = OneTimeWorkRequestBuilder<ScreenCheckWorker>()
       .setInitialDelay(intervalMinutes.toLong(), TimeUnit.MINUTES)
-//      .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
       .build()
 
     WorkManager.getInstance(applicationContext).enqueueUniqueWork(

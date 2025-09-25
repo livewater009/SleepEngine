@@ -16,8 +16,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.androidphotoapp.sleepengine.receiver.ScreenReceiver
 import com.androidphotoapp.sleepengine.storage.SleepLog
@@ -72,17 +74,29 @@ class MainActivity : ComponentActivity() {
     workManager.cancelUniqueWork("sleep_work_chain")
 
     // Schedule the first worker
-    val work = OneTimeWorkRequestBuilder<ScreenCheckWorker>()
+    val initialWork = OneTimeWorkRequestBuilder<ScreenCheckWorker>()
       .setInitialDelay(intervalMinutes.toLong(), TimeUnit.MINUTES)
+      .addTag("sleep_worker")
       .build()
 
     WorkManager.getInstance(applicationContext).enqueueUniqueWork(
       "sleep_work_chain",
       ExistingWorkPolicy.REPLACE,
-      listOf(work)
+      listOf(initialWork)
     )
 
-    Log.e("MainActivity: ", "🔥 Scheduled Worker")
+    // 🔹 15-min periodic safety net
+    val periodicWork = PeriodicWorkRequestBuilder<ScreenCheckWorker>(
+      15, TimeUnit.MINUTES
+    ).addTag("sleep_worker").build()
+
+    workManager.enqueueUniquePeriodicWork(
+      "sleep_work_periodic",
+      ExistingPeriodicWorkPolicy.KEEP,
+      periodicWork
+    )
+
+    Log.e("MainActivity", "🔥 Scheduled 10-min chain + 15-min periodic safety net")
   }
 }
 
